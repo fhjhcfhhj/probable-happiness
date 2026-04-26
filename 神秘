@@ -1,0 +1,173 @@
+-- 创建主窗口
+local MainWindow = Fenglib:CreateWindow({
+    Title = "我的工具箱",          -- 窗口标题
+    Subtitle = "威力加强版 v2.0",   -- 副标题
+    Keybind = Enum.KeyCode.RightAlt, -- 快捷键
+    Icon = 78229538488090,          -- 窗口图标（ID）
+    Theme = "Dark",                 -- 初始主题（可改为 "Purple", "Blue" 等）
+})
+
+-- 创建标签页（单栏）
+local HomeTab = MainWindow:Tab("主页", "rbxassetid://6031091004")
+local SettingsTab = MainWindow:Tab("设置", "rbxassetid://6031090998")
+local AboutTab = MainWindow:Tab("关于", "rbxassetid://78229538488090")
+
+-- ========== 主页 ==========
+local homeSection = HomeTab:Section("常规设置", "rbxassetid://6031091004", true)
+
+-- 开关
+homeSection:Toggle("启用超级功能", false, function(state)
+    print("超级功能已" .. (state and "开启" or "关闭"))
+    MainWindow:Notification("状态变更", "超级功能现已" .. (state and "启用" : "禁用"), state and "Success" or "Info", 2)
+end)
+
+-- 滑块（带范围）
+homeSection:Slider("音量控制", 0, 100, 75, function(value)
+    game:GetService("SoundService").MasterVolume = value / 100
+    print("音量设为: " .. value)
+end)
+
+-- 无限滑块（无上下限）
+homeSection:Slider("自由数值", nil, nil, 42, function(value)
+    print("数值: " .. value)
+end)
+
+-- 下拉菜单
+local dropdown = homeSection:Dropdown("选择模式", {"模式A", "模式B", "模式C"}, function(selected)
+    print("当前模式: " .. selected)
+end)
+
+-- 按键绑定
+homeSection:Keybind("快捷键绑定", Enum.KeyCode.K, function(key)
+    print("绑定了键: " .. key.Name)
+end)
+
+-- 文本框
+homeSection:Textbox("输入名称", "在此输入...", function(text)
+    print("输入内容: " .. text)
+end)
+
+-- 按钮
+homeSection:Button("执行任务", function()
+    MainWindow:Notification("提示", "任务执行成功！", "Success", 3)
+end)
+
+-- 颜色选择器
+homeSection:ColorPicker("主题强调色", Color3.fromRGB(80, 140, 255), function(color)
+    print("选取的颜色: R=" .. color.R*255 .. ", G=" .. color.G*255 .. ", B=" .. color.B*255)
+    -- 这里可以动态改变某个控件的颜色，例如修改某处文本
+end)
+
+-- 图片卡片
+homeSection:Image({
+    Title = "项目说明",
+    Subtitle = "这是一个示例卡片",
+    Description = {"点击可打开相关链接", "Fenglib 是一个现代 GUI 库"},
+    Icon = 6031090998,
+    IconColor = Color3.fromRGB(255, 200, 100),
+    Callback = function()
+        MainWindow:Notification("信息", "你点击了图片卡片", "Info", 2)
+    end
+})
+
+-- ========== 设置标签页（双栏示例）==========
+-- 使用 DualTab 可以左右分栏
+local DualSettings = MainWindow:DualTab("双栏设置")
+
+-- 左侧
+local leftSec = DualSettings:section("Left", "视觉选项")
+leftSec:Toggle("彩虹边框", false, function(state)
+    Fenglib:ToggleRainbow(state)
+    if state then
+        MainWindow:Notification("彩虹模式", "已开启，可在全局设置中调整类型和速度", "Success", 3)
+    end
+end)
+
+leftSec:Dropdown("彩虹类型", {
+    "Animated/Cycling Rainbow",
+    "Linear Gradient (Solid Rainbow)",
+    "Smooth Fading Gradient",
+    "Step/Band Rainbow",
+    "Rainbow Pulse",
+    "Radial Rainbow",
+    "Neon/Glowing Rainbow",
+    "Pastel Rainbow",
+    "Vertical/Horizontal Fade"
+}, function(selected)
+    Fenglib:SetRainbowType(selected)
+end)
+
+leftSec:Slider("彩虹速度", 0.2, 5, 1, function(speed)
+    Fenglib:SetRainbowSpeed(speed)
+end)
+
+leftSec:Label("提示：彩虹启用后窗口边框会动态变化")
+
+-- 右侧
+local rightSec = DualSettings:section("Right", "主题与投影")
+rightSec:Dropdown("主题", {"Dark", "White", "Purple", "Blue", "Red", "Yellow", "Green"}, function(theme)
+    Fenglib:SetTheme(theme)
+    MainWindow:Notification("主题切换", "当前主题：" .. theme, "Info", 1.5)
+end)
+
+rightSec:Slider("投影距离", 3, 20, 8, function(dist)
+    MainWindow:SetProjectorDistance(dist)
+end)
+
+rightSec:Slider("投影宽度", 4, 24, 12, function(w)
+    MainWindow:SetProjectorSize(w, MainWindow._ProjectorSettings.height) -- 保持高度不变
+end)
+
+rightSec:Slider("投影透明度", 0, 0.8, 0.3, function(alpha)
+    MainWindow:SetProjectorTransparency(alpha)
+end)
+
+rightSec:Button("进入3D投影模式", function()
+    MainWindow:EnableProjectorMode(8, 12, 8, 0.3)
+end)
+
+rightSec:Button("返回2D模式", function()
+    MainWindow:DisableProjectorMode()
+end)
+
+-- ========== 关于标签页 ==========
+local aboutSec = AboutTab:Section("关于", "rbxassetid://78229538488090")
+
+aboutSec:Paragraph("Fenglib GUI 库", "版本 1.0\n现代风格 UI 框架，支持彩虹动画、3D投影、主题切换、配置保存等功能。")
+
+aboutSec:Image({
+    Title = "作者",
+    Subtitle = "FengYu",
+    Description = {"感谢使用本库", "如有问题请联系开发者"},
+    Icon = 78229538488090,
+    Callback = function()
+        MainWindow:Notification("鸣谢", "感谢您使用 Fenglib！", "Info", 2)
+    end
+})
+
+-- 添加一个按钮来演示配置保存/加载
+local function saveCurrentConfig()
+    local success = Fenglib:SaveConfig("MySettings", MainWindow.ConfigFolder)
+    if success then
+        MainWindow:Notification("配置", "已保存到 " .. MainWindow.ConfigFolder .. "/MySettings.json", "Success", 3)
+    else
+        MainWindow:Notification("错误", "保存失败，请检查权限", "Error", 3)
+    end
+end
+
+local function loadCurrentConfig()
+    local path = MainWindow.ConfigFolder .. "/MySettings.json"
+    local success = Fenglib:LoadConfig(path)
+    if success then
+        MainWindow:Notification("配置", "加载成功", "Success", 2)
+    else
+        MainWindow:Notification("配置", "未找到配置文件", "Error", 2)
+    end
+end
+
+-- 可以在任意标签页添加按钮来调用
+local cfgSec = HomeTab:Section("配置管理")
+cfgSec:Button("保存当前配置", saveCurrentConfig)
+cfgSec:Button("加载配置", loadCurrentConfig)
+
+print("GUI 加载完成！按 RightAlt 打开/关闭窗口。")
