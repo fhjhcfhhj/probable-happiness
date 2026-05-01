@@ -249,11 +249,11 @@ sectionCommon:Button("变车", function()
     loadstring(game:HttpGet("https://pastefy.app/UqDEIOpO/raw"))()
 end)
 
-sectionCommon:Toggle("撸管R15", false, function(state)
+sectionCommon:Button("撸管R15", function()
     loadstring(game:HttpGet("https://pastefy.app/YZoglOyJ/raw"))()
 end)
 
-sectionCommon:Toggle("撸管R6", false, function(state)
+sectionCommon:Button("撸管R6", function()
     loadstring(game:HttpGet("https://pastefy.app/wa3v2Vgm/raw"))()
 end)
 
