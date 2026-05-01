@@ -257,7 +257,7 @@ sectionCommon:Button("撸管R6", function()
     loadstring(game:HttpGet("https://pastefy.app/wa3v2Vgm/raw"))()
 end)
 
-sectionCommon:Toggle("飞檐走壁", false, function(state)
+sectionCommon:Button("飞檐走壁", function()
     loadstring(game:HttpGet("https://pastebin.com/raw/zXk4Rq2r"))()
 end)
 
