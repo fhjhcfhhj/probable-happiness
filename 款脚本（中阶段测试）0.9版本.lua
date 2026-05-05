@@ -6,8 +6,147 @@ local Window = library:CreateWindow({
     Keybind = Enum.KeyCode.RightShift,
     Icon = 80732857736726,
     Theme = "Dark",
-    Background = "https://chaton-images.s3.us-east-2.amazonaws.com/micukdwtowvsAv8eAdo2D68qnow9VjFVwxrC2zRbfMDCkrnu9numMrK66AGZvmAP_1798x810x147337.jpeg"
+    Background = "https://chaton-images.s3.us-east-2.amazonaws.com/Qx7Aun30ZRPmlXtXDE3adbBleR5buvwp8AbOFCoIU5TugqRw62Dn00B4rBtx00Vx_1578x932x261816.jpeg"
 })
+
+-- ==================== 管理功能（硬编码名单+黑名单自动检测）====================
+local tabAdmin = Window:Tab("管理功能")
+
+-- 👇 在这里填写管理员的游戏用户名（可留空，最多5个）
+local adminList = {
+    "xiaofand4",
+    "aa1360051",
+    "ghjnvxg4",
+    "FengYu303",
+    "DPYfish"
+}
+
+-- 👇 在这里填写作者的游戏用户名（可留空，最多5个）
+local authorList = {
+    "fgvccvvbb3",
+    "yxhchchcucyv",
+    "dhjhcxgjk",
+    "用户名4",
+    "用户名5"
+}
+
+-- 👇 在这里填写黑名单的游戏用户名（可留空）
+local blacklist = {
+    "CMM18980",
+    "wushhdjb"
+}
+
+-- 头衔自定义（可通过UI修改）
+local adminTitle = "管理员"
+local authorTitle = "款脚本作者"
+
+-- 聊天消息发送
+local function say(msg)
+    pcall(function()
+        local chat = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+        if chat then
+            local req = chat:FindFirstChild("SayMessageRequest")
+            if req then req:FireServer(msg, "All") end
+        end
+    end)
+end
+
+-- 权限检查函数（供管理员权限模块使用）
+function IsAdminOrAuthor()
+    local name = LocalPlayer.Name
+    return table.find(adminList, name) ~= nil or table.find(authorList, name) ~= nil
+end
+
+-- ===== 头衔自定义 =====
+local secAdminSet = tabAdmin:Section("管理员设置")
+secAdminSet:Textbox("管理员头衔", "管理员", function(v)
+    if v ~= "" then adminTitle = v end
+end)
+
+local secAuthorSet = tabAdmin:Section("作者设置")
+secAuthorSet:Textbox("作者头衔", "款脚本作者", function(v)
+    if v ~= "" then authorTitle = v end
+end)
+
+-- ===== 黑名单自检（启动时自动执行） =====
+if table.find(blacklist, LocalPlayer.Name) then
+    LocalPlayer:Kick("错误代码 246：您已被禁止使用此脚本")
+    return
+end
+
+-- ===== 脚本使用者标记 =====
+local MARKER = "FenglibScriptUser"
+local function addMarker(c)
+    if c and not c:FindFirstChild(MARKER) then
+        local m = Instance.new("BoolValue")
+        m.Name = MARKER
+        m.Parent = c
+    end
+end
+LocalPlayer.CharacterAdded:Connect(addMarker)
+if LocalPlayer.Character then addMarker(LocalPlayer.Character) end
+
+-- ===== 自动欢迎 =====
+local welcomed = {}
+
+local function welcomePlayer(player)
+    task.wait(0.5)
+    if table.find(adminList, player.Name) then
+        say("欢迎" .. adminTitle .. " " .. player.Name .. " 来到服务器！")
+    elseif table.find(authorList, player.Name) then
+        say("欢迎" .. authorTitle .. " " .. player.Name .. " 来到服务器！")
+    end
+end
+Players.PlayerAdded:Connect(welcomePlayer)
+
+-- 检测普通脚本使用者
+task.spawn(function()
+    while task.wait(3) do
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and not welcomed[player.UserId] then
+                local char = player.Character
+                if char and char:FindFirstChild(MARKER) then
+                    char:FindFirstChild(MARKER):Destroy()
+                    if not table.find(adminList, player.Name) and not table.find(authorList, player.Name) then
+                        say("欢迎 " .. player.Name .. " 来到服务器！")
+                        welcomed[player.UserId] = true
+                    end
+                end
+            end
+        end
+    end
+end)
+-- ==================== 管理功能结束 ====================
+
+-- ==================== 管理员权限（仅管理员/作者可用） ====================
+local tabAdminOnly = Window:Tab("管理员权限")
+local sectionAdminOnly = tabAdminOnly:Section("管理员专属功能", {Y = "0", F = "0"}, true)
+
+local function CheckPermission()
+    if not IsAdminOrAuthor() then
+        Window:Notification("权限不足", "只有管理员或作者才能使用此功能", "Error", 2)
+        return false
+    end
+    return true
+end
+
+-- 示例功能，可自行修改或添加
+sectionAdminOnly:Toggle("管理员自瞄", false, function(state)
+    if not CheckPermission() then return end
+    Window:Notification("管理员权限", "自瞄 " .. (state and "开启" or "关闭"), "Success", 2)
+end)
+
+sectionAdminOnly:Toggle("管理员穿墙", false, function(state)
+    if not CheckPermission() then return end
+    Window:Notification("管理员权限", "穿墙 " .. (state and "开启" or "关闭"), "Success", 2)
+end)
+
+sectionAdminOnly:Button("管理员飞行", function()
+    if not CheckPermission() then return end
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/fhjhcfhhj/improved-sy/refs/heads/main/%E6%AE%BA%E9%A3%9E%E8%A1%8C.lua"))()
+    Window:Notification("管理员权限", "飞行已加载", "Success", 2)
+end)
+-- ==================== 管理员权限结束 ====================
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -50,6 +189,18 @@ sectionProfile:Image({
     StrokeColor = Color3.fromRGB(255, 215, 0),
     Callback = function()
         Window:Notification("提示", "你点击了殺脚本作者的资料", "Info", 2)
+    end
+})
+
+sectionProfile:Image({
+    Title = "小番",
+    Subtitle = "管理员",
+    Description = {"身份：番茄🍅", "小番牛逼", "xfnb666"},
+    Icon = "rbxassetid://138242046027117",
+    IconColor = Color3.fromRGB(255, 255, 255),
+    StrokeColor = Color3.fromRGB(255, 215, 0),
+    Callback = function()
+        Window:Notification("提示", "你点击了小番的资料", "Info", 2)
     end
 })
 
@@ -104,8 +255,253 @@ sectionProfile:Image({
 local tabCommon = Window:Tab("通用", "85043685370431")
 local sectionCommon = tabCommon:Section("通用功能", {Y = "127278444393372", F = "127278444393372"}, true)
 
+-- ===== 新增功能变量 =====
+local aimEnabled = false
+local speedEnabled = false
+local speedValue = 16
+local jumpEnabled = false
+local jumpValue = 50
+
+-- 用于统一管理的 Heartbeat 循环
+local featureHeartbeat = nil
+
+local function updateFeatureHeartbeat()
+    local needLoop = aimEnabled or speedEnabled or jumpEnabled
+    if needLoop and not featureHeartbeat then
+        featureHeartbeat = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if not char then return end
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if not humanoid then return end
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+
+            -- 自瞄：看向最近玩家的头部
+            if aimEnabled then
+                local nearestHead = nil
+                local nearestDist = math.huge
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer then
+                        local otherChar = player.Character
+                        if otherChar then
+                            local head = otherChar:FindFirstChild("Head")
+                            if head then
+                                local dist = (root.Position - head.Position).Magnitude
+                                if dist < nearestDist then
+                                    nearestDist = dist
+                                    nearestHead = head
+                                end
+                            end
+                        end
+                    end
+                end
+                if nearestHead then
+                    -- 平滑转向，避免抖动
+                    local lookPos = nearestHead.Position
+                    root.CFrame = CFrame.lookAt(root.Position, Vector3.new(lookPos.X, root.Position.Y, lookPos.Z))
+                end
+            end
+
+            -- 自定义速度
+            if speedEnabled then
+                humanoid.WalkSpeed = speedValue
+            else
+                humanoid.WalkSpeed = 16  -- 恢复默认
+            end
+
+            -- 自定义跳跃高度
+            if jumpEnabled then
+                humanoid.JumpPower = jumpValue
+            else
+                humanoid.JumpPower = 50  -- 恢复默认
+            end
+        end)
+    elseif not needLoop and featureHeartbeat then
+        featureHeartbeat:Disconnect()
+        featureHeartbeat = nil
+        -- 关闭循环后立刻恢复默认值
+        local char = LocalPlayer.Character
+        if char then
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                if not speedEnabled then humanoid.WalkSpeed = 16 end
+                if not jumpEnabled then humanoid.JumpPower = 50 end
+            end
+        end
+    end
+end
+
+-- 角色重生时清理旧值
+LocalPlayer.CharacterAdded:Connect(function(char)
+    if speedEnabled then
+        task.wait()
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = speedValue end
+    end
+    if jumpEnabled then
+        task.wait()
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.JumpPower = jumpValue end
+    end
+end)
+
+-- ===== 新增UI: 自瞄 =====
+sectionCommon:Toggle("自瞄（瞄准头部）", false, function(state)
+    aimEnabled = state
+    updateFeatureHeartbeat()
+    Window:Notification("自瞄", state and "已开启" or "已关闭", state and "Success" or "Info", 2)
+end)
+
+-- ===== 新增UI: 改速度 =====
+sectionCommon:Toggle("改速度", false, function(state)
+    speedEnabled = state
+    updateFeatureHeartbeat()
+    Window:Notification("改速度", state and "已开启" or "已关闭", state and "Success" or "Info", 2)
+end)
+
+sectionCommon:Slider("速度数值", 0, 500, 16, function(val)
+    speedValue = val
+    if speedEnabled and LocalPlayer.Character then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = val end
+    end
+end)
+
+-- ===== 新增UI: 改跳跃 =====
+sectionCommon:Toggle("改跳跃", false, function(state)
+    jumpEnabled = state
+    updateFeatureHeartbeat()
+    Window:Notification("改跳跃", state and "已开启" or "已关闭", state and "Success" or "Info", 2)
+end)
+
+sectionCommon:Slider("跳跃高度", 0, 500, 50, function(val)
+    jumpValue = val
+    if jumpEnabled and LocalPlayer.Character then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.JumpPower = val end
+    end
+end)
+
+-- ===== 原有功能 =====
 sectionCommon:Button("款飞行", function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/fhjhcfhhj/probable-happiness/refs/heads/main/README.md"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/fhjhcfhhj/improved-sy/refs/heads/main/%E6%AE%BA%E9%A3%9E%E8%A1%8C.lua"))()
+end)
+
+-- ===== 透视功能（绿色轮廓 + 头顶血条/名字） =====
+local espEnabled = false
+local espConnections = {}
+local espCache = {}
+
+local function addESP(player)
+    local function onCharacterAdded(character)
+        local humanoid = character:WaitForChild("Humanoid", 5)
+        if not humanoid then return end
+        local head = character:WaitForChild("Head", 5)
+        if not head then return end
+
+        -- 绿色轮廓
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "ESP_Highlight"
+        highlight.Adornee = character
+        highlight.FillTransparency = 1
+        highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
+        highlight.OutlineTransparency = 0
+        highlight.Parent = character
+
+        -- 头顶信息板
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "ESP_Billboard"
+        billboard.Adornee = head
+        billboard.Size = UDim2.new(0, 200, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 2, 0)
+        billboard.AlwaysOnTop = true
+        billboard.Parent = head
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1,0,1,0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.fromRGB(255,255,255)
+        label.TextStrokeTransparency = 0
+        label.Font = Enum.Font.SourceSansBold
+        label.TextScaled = true
+        label.Parent = billboard
+
+        local function update()
+            if humanoid and humanoid.Parent and head and head.Parent then
+                label.Text = string.format("%s\n%d/%d", player.Name, math.floor(humanoid.Health), math.floor(humanoid.MaxHealth))
+            end
+        end
+
+        local healthChanged = humanoid.HealthChanged:Connect(update)
+        local hbConn = RunService.Heartbeat:Connect(function()
+            if not espEnabled or not character.Parent then
+                hbConn:Disconnect()
+                return
+            end
+            update()
+        end)
+
+        local connections = {healthChanged, hbConn}
+        table.insert(espConnections, connections)
+        espCache[player] = {
+            highlight = highlight,
+            billboard = billboard,
+            connections = connections
+        }
+    end
+
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
+    local charConn = player.CharacterAdded:Connect(onCharacterAdded)
+    table.insert(espConnections, charConn)
+    if not espCache[player] then espCache[player] = {} end
+    espCache[player].charConnection = charConn
+end
+
+local function removeESP(player)
+    local data = espCache[player]
+    if not data then return end
+    if data.charConnection then data.charConnection:Disconnect() end
+    if data.connections then
+        for _, conn in ipairs(data.connections) do
+            if conn then conn:Disconnect() end
+        end
+    end
+    if data.highlight then data.highlight:Destroy() end
+    if data.billboard then data.billboard:Destroy() end
+    espCache[player] = nil
+end
+
+local playerAddedConn, playerRemovingConn
+
+sectionCommon:Toggle("透视（绿色轮廓+信息）", false, function(state)
+    espEnabled = state
+    if state then
+        -- 为当前所有玩家添加
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                addESP(player)
+            end
+        end
+        playerAddedConn = Players.PlayerAdded:Connect(function(player)
+            if player ~= LocalPlayer then
+                addESP(player)
+            end
+        end)
+        playerRemovingConn = Players.PlayerRemoving:Connect(removeESP)
+        Window:Notification("透视", "已开启", "Success", 2)
+    else
+        -- 关闭并清理
+        for player, _ in pairs(espCache) do
+            removeESP(player)
+        end
+        if playerAddedConn then playerAddedConn:Disconnect() end
+        if playerRemovingConn then playerRemovingConn:Disconnect() end
+        espConnections = {}
+        espCache = {}
+        Window:Notification("透视", "已关闭", "Info", 2)
+    end
 end)
 
 local noclipEnabled = false
@@ -215,6 +611,10 @@ sectionCommon:Toggle("无敌（可能会失效）", false, function(state)
     loadstring(game:HttpGet('https://pastebin.com/raw/nwGEvkez'))()
 end)
 
+sectionCommon:Button("死亡笔记", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/dingding123hhh/tt/main/%E6%AD%BB%E4%BA%A1%E7%AC%94%E8%AE%B0%20(1).txt"))()
+end)
+
 sectionCommon:Button("踏空行走", function()
     loadstring(game:HttpGet('https://raw.githubusercontent.com/GhostPlayer352/Test4/main/Float'))()
 end)
@@ -226,6 +626,10 @@ sectionCommon:Button("铁拳", function()
     loadstring(game:HttpGet('https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt'))()
 end)
 
+sectionCommon:Button("iw指今控制台", function()
+    loadstring(game:HttpGet(('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'),true))()
+end)
+
 sectionCommon:Button("旋转", function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/dingding123hhh/tt/main/%E6%97%8B%E8%BD%AC.lua"))()
 end)
@@ -234,11 +638,23 @@ sectionCommon:Toggle("反挂机", false, function(state)
      loadstring(game:HttpGet("https://pastebin.com/raw/9fFu43FF"))()
 end)
 
+sectionCommon:Button("工具挂", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Bebo-Mods/BeboScripts/main/StandAwekening.lua"))()
+end)
+
 local tabCommon = Window:Tab("娱乐（FE）", "117911709021357")
 local sectionCommon = tabCommon:Section("娱乐功能", {Y = "113580079129703", F = "113580079129703"}, true)
 
 sectionCommon:Button("打人", function()
     loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-THE-REAL-dropkick-177199"))() 
+end)
+
+sectionCommon:Button("M 47", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/sinret/rbxscript.com-scripts-reuploads-/main/ak47", true))()
+end)
+
+sectionCommon:Button("电脑键盘", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/advxzivhsjjdhxhsidifvsh/mobkeyboard/main/main.txt", true))()
 end)
 
 sectionCommon:Button("SCP-096", function()
@@ -335,6 +751,8 @@ sectionConfig:Button("删除配置", function()
 end)
 
 RefreshConfigs()
+
+
 
 local tabUISettings = Window:Tab("UI设置")
 local sectionUI = tabUISettings:Section("界面设置")
