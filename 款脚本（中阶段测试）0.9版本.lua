@@ -9,38 +9,38 @@ local Window = library:CreateWindow({
     Background = "https://chaton-images.s3.us-east-2.amazonaws.com/Qx7Aun30ZRPmlXtXDE3adbBleR5buvwp8AbOFCoIU5TugqRw62Dn00B4rBtx00Vx_1578x932x261816.jpeg"
 })
 
--- ==================== 管理功能（硬编码名单+黑名单自动检测）====================
+-- ==================== 管理功能（硬编码名单+自动欢迎+黑名单）====================
 local tabAdmin = Window:Tab("管理功能")
 
--- 👇 在这里填写管理员的游戏用户名（可留空，最多5个）
+-- 👇 在这里修改管理员用户名
 local adminList = {
-    "xiaofand4",
+    "DPYfish",
     "aa1360051",
+    "xiaofand4",
     "ghjnvxg4",
-    "FengYu303",
-    "DPYfish"
+    "NOOOPLSDONTletme444"
 }
 
--- 👇 在这里填写作者的游戏用户名（可留空，最多5个）
+-- 👇 在这里修改作者用户名
 local authorList = {
-    "fgvccvvbb3",
-    "yxhchchcucyv",
     "dhjhcxgjk",
+    "fgvccvvbb3",
+    "用户名3",
     "用户名4",
     "用户名5"
 }
 
--- 👇 在这里填写黑名单的游戏用户名（可留空）
+-- 👇 在这里修改黑名单用户名
 local blacklist = {
     "CMM18980",
     "wushhdjb"
 }
 
--- 头衔自定义（可通过UI修改）
+-- 固定头衔
 local adminTitle = "管理员"
 local authorTitle = "款脚本作者"
 
--- 聊天消息发送
+-- 聊天消息
 local function say(msg)
     pcall(function()
         local chat = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
@@ -51,30 +51,19 @@ local function say(msg)
     end)
 end
 
--- 权限检查函数（供管理员权限模块使用）
+-- 权限检查（供管理员权限模块使用）
 function IsAdminOrAuthor()
     local name = LocalPlayer.Name
     return table.find(adminList, name) ~= nil or table.find(authorList, name) ~= nil
 end
 
--- ===== 头衔自定义 =====
-local secAdminSet = tabAdmin:Section("管理员设置")
-secAdminSet:Textbox("管理员头衔", "管理员", function(v)
-    if v ~= "" then adminTitle = v end
-end)
-
-local secAuthorSet = tabAdmin:Section("作者设置")
-secAuthorSet:Textbox("作者头衔", "款脚本作者", function(v)
-    if v ~= "" then authorTitle = v end
-end)
-
--- ===== 黑名单自检（启动时自动执行） =====
+-- 黑名单自检
 if table.find(blacklist, LocalPlayer.Name) then
     LocalPlayer:Kick("错误代码 246：您已被禁止使用此脚本")
     return
 end
 
--- ===== 脚本使用者标记 =====
+-- 脚本使用者标记
 local MARKER = "FenglibScriptUser"
 local function addMarker(c)
     if c and not c:FindFirstChild(MARKER) then
@@ -86,7 +75,7 @@ end
 LocalPlayer.CharacterAdded:Connect(addMarker)
 if LocalPlayer.Character then addMarker(LocalPlayer.Character) end
 
--- ===== 自动欢迎 =====
+-- 自动欢迎
 local welcomed = {}
 
 local function welcomePlayer(player)
@@ -99,7 +88,7 @@ local function welcomePlayer(player)
 end
 Players.PlayerAdded:Connect(welcomePlayer)
 
--- 检测普通脚本使用者
+-- 普通脚本使用者欢迎
 task.spawn(function()
     while task.wait(3) do
         for _, player in ipairs(Players:GetPlayers()) do
@@ -130,7 +119,7 @@ local function CheckPermission()
     return true
 end
 
--- 示例功能，可自行修改或添加
+-- 在这里添加或修改管理员专属功能
 sectionAdminOnly:Toggle("管理员自瞄", false, function(state)
     if not CheckPermission() then return end
     Window:Notification("管理员权限", "自瞄 " .. (state and "开启" or "关闭"), "Success", 2)
